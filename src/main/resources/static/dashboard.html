@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rate Limiter Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f1117;
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            color: #f1f5f9;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 1.5rem;
+        }
+
+        .grid4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 1.25rem;
+        }
+
+        .metric {
+            background: #1e2130;
+            border: 0.5px solid #2d3348;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .metric-value {
+            font-size: 26px;
+            font-weight: 500;
+            color: #f1f5f9;
+        }
+
+        .metric-value.allowed { color: #4ade80; }
+        .metric-value.blocked { color: #f87171; }
+
+        .card {
+            background: #1e2130;
+            border: 0.5px solid #2d3348;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h3 {
+            font-size: 14px;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        input, select {
+            width: 100%;
+            background: #0f1117;
+            border: 0.5px solid #2d3348;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 14px;
+            padding: 8px 12px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        input:focus, select:focus {
+            border-color: #4f6ef7;
+        }
+
+        select option { background: #1e2130; }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .row-3 {
+            display: grid;
+            grid-template-columns: 1fr 120px 140px;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 9px 18px;
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            font-weight: 500;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+
+        button:active { transform: scale(0.97); }
+
+        .btn-primary {
+            background: #4f6ef7;
+            color: #fff;
+        }
+
+        .btn-primary:hover { opacity: 0.85; }
+
+        .btn-fire {
+            background: #2d1a1a;
+            color: #f87171;
+            border: 0.5px solid #5a2020;
+        }
+
+        .btn-fire:hover { opacity: 0.8; }
+
+        .btn-secondary {
+            background: #1a2235;
+            color: #94a3b8;
+            border: 0.5px solid #2d3348;
+        }
+
+        .btn-secondary:hover { opacity: 0.8; }
+
+        .reg-status {
+            font-size: 13px;
+            color: #64748b;
+            margin-left: 4px;
+        }
+
+        .clients-list {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .client-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #1a2235;
+            color: #7da4f7;
+            border: 0.5px solid #2d3f6e;
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        .client-tag:hover { opacity: 0.75; }
+
+        .progress-wrap {
+            background: #0f1117;
+            border-radius: 4px;
+            height: 6px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 6px;
+            border-radius: 4px;
+            background: #4ade80;
+            width: 0%;
+            transition: width 0.2s, background 0.2s;
+        }
+
+        .prog-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            margin-top: 1rem;
+        }
+
+        .prog-row span {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .log-box {
+            background: #0a0d14;
+            border: 0.5px solid #1e2a3a;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            max-height: 220px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            padding: 3px 0;
+            border-bottom: 0.5px solid #1a1f2e;
+            color: #64748b;
+        }
+
+        .log-entry.ok { color: #4ade80; }
+        .log-entry.blocked { color: #f87171; }
+        .log-entry.err { color: #fbbf24; }
+
+        .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 3px 10px;
+            border-radius: 6px;
+        }
+
+        .badge-ok { background: #14291f; color: #4ade80; }
+        .badge-blocked { background: #291414; color: #f87171; }
+        .badge-idle { background: #1e2130; color: #64748b; }
+
+        .last-status { margin-top: 2px; }
+
+        @media (max-width: 600px) {
+            .grid4, .row { grid-template-columns: 1fr 1fr; }
+            .row-3 { grid-template-columns: 1fr; }
+            body { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Rate Limiter Dashboard</h1>
+<p class="subtitle">Live demo — connected to rate-limiter-service.up.railway.app</p>
+
+<div class="grid4">
+    <div class="metric">
+        <div class="metric-label"><i class="ti ti-send"></i> total fired</div>
+        <div class="metric-value" id="m-total">0</div>
+    </div>
+    <div class="metric">
+        <div class="metric-label"><i class="ti ti-circle-check"></i> allowed</div>
+        <div class="metric-value allowed" id="m-allowed">0</div>
+    </div>
+    <div class="metric">
+        <div class="metric-label"><i class="ti ti-ban"></i> blocked</div>
+        <div class="metric-value blocked" id="m-blocked">0</div>
+    </div>
+    <div class="metric">
+        <div class="metric-label"><i class="ti ti-activity"></i> last status</div>
+        <div class="last-status" id="m-last"><span class="badge badge-idle">—</span></div>
+    </div>
+</div>
+
+<div class="card">
+    <h3><i class="ti ti-user-plus"></i> Register Client</h3>
+    <div class="row">
+        <div>
+            <label>client id</label>
+            <input type="text" id="reg-client" placeholder="e.g. harsha" value="harsha" />
+        </div>
+        <div>
+            <label>max requests</label>
+            <input type="number" id="reg-max" value="5" min="1" max="100" />
+        </div>
+        <div>
+            <label>window (seconds)</label>
+            <input type="number" id="reg-window" value="60" min="1" />
+        </div>
+        <div>
+            <label>strategy</label>
+            <select id="reg-strategy">
+                <option value="tokenBucket">Token Bucket</option>
+                <option value="slidingWindow">Sliding Window</option>
+            </select>
+        </div>
+    </div>
+    <div class="btn-row">
+        <button class="btn-primary" onclick="registerClient()"><i class="ti ti-check"></i> Register</button>
+        <span class="reg-status" id="reg-status"></span>
+    </div>
+    <div class="clients-list" id="clients-list"></div>
+</div>
+
+<div class="card">
+    <h3><i class="ti ti-player-play"></i> Fire Requests</h3>
+    <div class="row-3">
+        <div>
+            <label>client id to test</label>
+            <input type="text" id="check-client" placeholder="e.g. harsha" value="harsha" />
+        </div>
+        <div>
+            <label>fire count</label>
+            <input type="number" id="fire-count" value="1" min="1" max="20" />
+        </div>
+        <div>
+            <label>delay between requests (ms)</label>
+            <input type="number" id="fire-delay" value="300" min="0" max="3000" />
+        </div>
+    </div>
+    <div class="btn-row">
+        <button class="btn-fire" onclick="fireRequests()"><i class="ti ti-send"></i> Fire</button>
+        <button class="btn-secondary" onclick="clearLog()"><i class="ti ti-trash"></i> Clear</button>
+    </div>
+    <div class="prog-row">
+        <span>request progress</span>
+        <span id="prog-label">—</span>
+    </div>
+    <div class="progress-wrap">
+        <div class="progress-bar" id="prog-bar"></div>
+    </div>
+</div>
+
+<div class="card">
+    <h3><i class="ti ti-terminal"></i> Request Log</h3>
+    <div class="log-box" id="log-box">
+        <div class="log-entry">register a client and fire requests to see live results...</div>
+    </div>
+</div>
+
+<script>
+    const BASE = 'https://rate-limiter-service.up.railway.app';
+    let stats = { total: 0, allowed: 0, blocked: 0 };
+    let registeredClients = [];
+
+    function updateMetrics() {
+        document.getElementById('m-total').textContent = stats.total;
+        document.getElementById('m-allowed').textContent = stats.allowed;
+        document.getElementById('m-blocked').textContent = stats.blocked;
+    }
+
+    function log(msg, type = '') {
+        const box = document.getElementById('log-box');
+        const el = document.createElement('div');
+        el.className = 'log-entry ' + type;
+        el.textContent = new Date().toLocaleTimeString() + '  ' + msg;
+        box.insertBefore(el, box.firstChild);
+    }
+
+    function clearLog() {
+        document.getElementById('log-box').innerHTML = '';
+        stats = { total: 0, allowed: 0, blocked: 0 };
+        updateMetrics();
+        document.getElementById('m-last').innerHTML = '<span class="badge badge-idle">—</span>';
+        document.getElementById('prog-bar').style.width = '0%';
+        document.getElementById('prog-label').textContent = '—';
+    }
+
+    function renderClients() {
+        const el = document.getElementById('clients-list');
+        if (!registeredClients.length) { el.innerHTML = ''; return; }
+        el.innerHTML = '<div style="font-size:11px;color:#475569;margin-bottom:4px;width:100%;">registered — click to use:</div>' +
+            registeredClients.map(c =>
+                `<span class="client-tag" onclick="useClient('${c}')">${c}</span>`
+            ).join('');
+    }
+
+    function useClient(id) {
+        document.getElementById('check-client').value = id;
+    }
+
+    async function registerClient() {
+        const clientId = document.getElementById('reg-client').value.trim();
+        const maxRequests = parseInt(document.getElementById('reg-max').value);
+        const windowSizeInSeconds = parseInt(document.getElementById('reg-window').value);
+        const strategy = document.getElementById('reg-strategy').value;
+        const statusEl = document.getElementById('reg-status');
+
+        if (!clientId) { statusEl.textContent = 'enter a client id'; return; }
+
+        statusEl.style.color = '#64748b';
+        statusEl.textContent = 'registering...';
+
+        try {
+            const res = await fetch(`${BASE}/api/ratelimiter/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clientId, maxRequests, windowSizeInSeconds, strategy })
+            });
+            const text = await res.text();
+            statusEl.style.color = '#4ade80';
+            statusEl.textContent = '✓ ' + text;
+            document.getElementById('check-client').value = clientId;
+            if (!registeredClients.includes(clientId)) registeredClients.push(clientId);
+            renderClients();
+            log('registered: ' + clientId + ' — ' + maxRequests + ' reqs / ' + windowSizeInSeconds + 's [' + strategy + ']', 'ok');
+        } catch (e) {
+            statusEl.style.color = '#f87171';
+            statusEl.textContent = 'error: ' + e.message;
+            log('register failed: ' + e.message, 'err');
+        }
+    }
+
+    async function fireRequests() {
+        const clientId = document.getElementById('check-client').value.trim();
+        const count = parseInt(document.getElementById('fire-count').value) || 1;
+        const delay = parseInt(document.getElementById('fire-delay').value) || 0;
+        if (!clientId) { log('enter a client id first', 'err'); return; }
+
+        const progBar = document.getElementById('prog-bar');
+        const progLabel = document.getElementById('prog-label');
+
+        for (let i = 0; i < count; i++) {
+            try {
+                const res = await fetch(`${BASE}/api/ratelimiter/check/${clientId}`);
+                const data = await res.json();
+                stats.total++;
+                const pct = Math.round(((i + 1) / count) * 100);
+                progBar.style.width = pct + '%';
+                progLabel.textContent = (i + 1) + ' / ' + count;
+
+                if (data.allowed) {
+                    stats.allowed++;
+                    progBar.style.background = '#4ade80';
+                    document.getElementById('m-last').innerHTML = '<span class="badge badge-ok">200 allowed</span>';
+                    log('→ ' + clientId + '  allowed  [' + res.status + ']', 'ok');
+                } else {
+                    stats.blocked++;
+                    progBar.style.background = '#f87171';
+                    document.getElementById('m-last').innerHTML = '<span class="badge badge-blocked">429 blocked</span>';
+                    log('→ ' + clientId + '  BLOCKED  retryAfter: ' + data.retryAfterSeconds + 's  [' + res.status + ']', 'blocked');
+                }
+                updateMetrics();
+            } catch (e) {
+                log('request failed: ' + e.message, 'err');
+            }
+            if (delay > 0 && i < count - 1) await new Promise(r => setTimeout(r, delay));
+        }
+    }
+</script>
+</body>
+</html>
